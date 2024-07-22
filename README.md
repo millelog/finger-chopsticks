@@ -1,38 +1,60 @@
-# create-svelte
+# Finger Chopsticks AI
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+This project is an interactive web implementation of the classic hand game "Finger Chopsticks" (also known as Chopsticks or Stick Fingers), featuring a challenging AI opponent.
 
-## Creating a project
+## Motivation
 
-If you're seeing this, you've probably already done this step. Congrats!
+I'm so bad at Finger Chopsticks that I built an AI to beat people for me.
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+## Features
 
-# create a new project in my-app
-npm create svelte@latest my-app
+- Intuitive drag-and-drop interface
+- Challenging AI opponent (that hopefully beats humans better than I can)
+- Animated moves for better visibility (of your imminent defeat)
+- Responsive design for both desktop and mobile play (lose anywhere, anytime!)
+
+## Tech Stack
+
+- SvelteKit
+- TypeScript
+- Tailwind CSS
+
+## Getting Started
+
+To set up and run this project locally, follow these steps:
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/millelog/finger-chopsticks.git
+   cd finger-chopsticks
+   ```
+
+2. Install dependencies:
+   ```
+   pnpm install
+   ```
+
+3. Start the development server:
+   ```
+   pnpm run dev
+   ```
+
+4. Open your browser and navigate to `http://localhost:5173` (or the port shown in your terminal).
+
+5. Start playing and losing to the AI!
+
+## Building for Production
+
+To create a production version of the app:
+
+```
+pnpm run build
 ```
 
-## Developing
+You can preview the production build with `pnpm run preview`.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Contributing
 
-```bash
-npm run dev
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+Feel free to contribute, report issues, or suggest improvements. 
