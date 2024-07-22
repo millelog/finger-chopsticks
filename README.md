@@ -13,6 +13,11 @@ I'm so bad at Finger Chopsticks that I built an AI to beat people for me.
 - Animated moves for better visibility (of your imminent defeat)
 - Responsive design for both desktop and mobile play (lose anywhere, anytime!)
 
+## Live Demo
+
+You can try out the game at: https://chopsticks.loganmiller.dev
+
+
 ## Tech Stack
 
 - SvelteKit
