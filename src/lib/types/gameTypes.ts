@@ -32,12 +32,29 @@ export interface SplitMove {
   targetHand: Hand;
 }
 
+export interface RegularBotMove {
+  type: 'regular';
+  sourcePlayer: Player;
+  sourceHand: Hand;
+  targetPlayer: Player;
+  targetHand: Hand;
+}
+
+export interface SplitBotMove {
+  type: 'split';
+  player: Player;
+  sourceHand: Hand;
+  targetHand: Hand;
+}
+
+export type BotMove = RegularBotMove | SplitBotMove;
 export type LastMove = RegularMove | SplitMove;
 
 export interface GameStore {
   subscribe: (callback: (state: GameState) => void) => () => void;
   playHand: (sourcePlayer: Player, sourceHand: Hand, targetPlayer: Player, targetHand: Hand) => void;
   splitHand: (player: Player, sourceHand: Hand, targetHand: Hand) => void;
+  getBotMove: () => BotMove;
   resetGame: () => void;
   setGameStatus: (status: GameStatus) => void;
 }

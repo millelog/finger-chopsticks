@@ -1,6 +1,6 @@
 <!-- src/lib/components/GameBoard.svelte -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { gameStore } from '$lib/stores/gameStore';
 	import Hand from '$lib/components/Hand.svelte';
 	import type { GameState, Player, Hand as HandType, LastMove } from '$lib/types/gameTypes';
@@ -10,6 +10,7 @@
 	let gameState: GameState;
 	let isAnimating = false;
 	let highlightedHand: string | null = null;
+	let arrowPath: string = '';
 
 	gameStore.subscribe((state) => {
 		gameState = state;
@@ -20,11 +21,8 @@
 		gameStore.resetGame();
 	});
 
-	function handleDragOver(event: DragEvent) {
-		event.preventDefault();
-		if (event.dataTransfer) {
-			event.dataTransfer.dropEffect = 'move';
-		}
+	function delay(ms: number) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 
 	async function handleDrop(event: DragEvent, targetPlayer: Player, targetHand: HandType) {
@@ -45,6 +43,17 @@
 				await executeMove(sourcePlayer, sourceHand, targetPlayer, targetHand);
 			}
 		}
+
+		if (gameState.currentTurn === 'bot' && gameState.status === 'ongoing') {
+			await makeBotMove();
+		}
+	}
+
+	function handleDragOver(event: DragEvent) {
+		event.preventDefault();
+		if (event.dataTransfer) {
+			event.dataTransfer.dropEffect = 'move';
+		}
 	}
 
 	function isValidMove(
@@ -60,14 +69,32 @@
 		const totalFingers = gameState[player][sourceHand] + gameState[player][targetHand];
 		return totalFingers % 2 === 0 && gameState[player][targetHand] === 0;
 	}
+	async function animateMove(
+		sourcePlayer: Player,
+		sourceHand: HandType,
+		targetPlayer: Player,
+		targetHand: HandType
+	): Promise<void> {
+		if (sourcePlayer === 'bot') {
+			highlightedHand = `${sourcePlayer}-${sourceHand}`;
+			await delay(250);
+			highlightedHand = `${targetPlayer}-${targetHand}`;
+			await tick();
+			updateArrowPath();
+			await delay(1000);
+			highlightedHand = null;
+		} else {
+			// For player moves, just update the arrow path without animation
+			await tick();
+			updateArrowPath();
+		}
+	}
 
 	async function executeSplitMove(player: Player, sourceHand: HandType, targetHand: HandType) {
 		isAnimating = true;
-		await animateMove(() => gameStore.splitHand(player, sourceHand, targetHand));
+		gameStore.splitHand(player, sourceHand, targetHand);
+		await animateMove(player, sourceHand, player, targetHand);
 		isAnimating = false;
-		if (gameState.currentTurn === 'bot' && gameState.status === 'ongoing') {
-			await makeBotMove();
-		}
 	}
 
 	async function executeMove(
@@ -77,35 +104,26 @@
 		targetHand: HandType
 	) {
 		isAnimating = true;
-		await animateMove(() => gameStore.playHand(sourcePlayer, sourceHand, targetPlayer, targetHand));
+		gameStore.playHand(sourcePlayer, sourceHand, targetPlayer, targetHand);
+		await animateMove(sourcePlayer, sourceHand, targetPlayer, targetHand);
 		isAnimating = false;
-		if (gameState.currentTurn === 'bot' && gameState.status === 'ongoing') {
-			await makeBotMove();
-		}
-	}
-
-	async function animateMove(moveFunction: () => void): Promise<void> {
-		moveFunction();
-		await new Promise((resolve) => setTimeout(resolve, 500)); // Delay for animation
 	}
 
 	async function makeBotMove() {
-		await new Promise((resolve) => setTimeout(resolve, 1000)); // Delay before bot move
-		const botMove = getBotMove(gameState);
-		highlightedHand = `bot-${botMove.sourceHand}`;
-		await new Promise((resolve) => setTimeout(resolve, 500)); // Highlight source hand
-		highlightedHand =
-			botMove.type === 'split' ? `bot-${botMove.targetHand}` : `player-${botMove.targetHand}`;
-		await animateMove(() => {
-			if (botMove.type === 'regular') {
-				gameStore.playHand('bot', botMove.sourceHand, 'player', botMove.targetHand);
-			} else {
-				gameStore.splitHand('bot', botMove.sourceHand, botMove.targetHand);
-			}
-		});
-		highlightedHand = null;
-	}
+		await delay(1000); // Delay before bot move
+		const botMove = gameStore.getBotMove();
 
+		if (botMove.type === 'regular') {
+			await executeMove(
+				botMove.sourcePlayer,
+				botMove.sourceHand,
+				botMove.targetPlayer,
+				botMove.targetHand
+			);
+		} else {
+			await executeSplitMove(botMove.player, botMove.sourceHand, botMove.targetHand);
+		}
+	}
 	function checkGameOver() {
 		if (gameState.status !== 'ongoing') return;
 
@@ -119,19 +137,33 @@
 		}
 	}
 
-	function getArrowPath(lastMove: LastMove | null): string {
-		if (!lastMove) return '';
+	function updateArrowPath() {
+		if (!gameState.lastMove) {
+			arrowPath = '';
+			return;
+		}
 
-		const source =
-			lastMove.type === 'split'
-				? document.querySelector(`[data-hand="${lastMove.player}-${lastMove.sourceHand}"]`)
-				: document.querySelector(`[data-hand="${lastMove.sourcePlayer}-${lastMove.sourceHand}"]`);
-		const target =
-			lastMove.type === 'split'
-				? document.querySelector(`[data-hand="${lastMove.player}-${lastMove.targetHand}"]`)
-				: document.querySelector(`[data-hand="${lastMove.targetPlayer}-${lastMove.targetHand}"]`);
+		let sourcePlayer: Player, sourceHand: HandType, targetPlayer: Player, targetHand: HandType;
 
-		if (!source || !target) return '';
+		if (gameState.lastMove.type === 'regular') {
+			sourcePlayer = gameState.lastMove.sourcePlayer;
+			sourceHand = gameState.lastMove.sourceHand;
+			targetPlayer = gameState.lastMove.targetPlayer;
+			targetHand = gameState.lastMove.targetHand;
+		} else {
+			sourcePlayer = gameState.lastMove.player;
+			sourceHand = gameState.lastMove.sourceHand;
+			targetPlayer = gameState.lastMove.player;
+			targetHand = gameState.lastMove.targetHand;
+		}
+
+		const source = document.querySelector(`[data-hand="${sourcePlayer}-${sourceHand}"]`);
+		const target = document.querySelector(`[data-hand="${targetPlayer}-${targetHand}"]`);
+
+		if (!source || !target) {
+			arrowPath = '';
+			return;
+		}
 
 		const sourceRect = source.getBoundingClientRect();
 		const targetRect = target.getBoundingClientRect();
@@ -141,7 +173,7 @@
 		const endX = targetRect.left + targetRect.width / 2;
 		const endY = targetRect.top + targetRect.height / 2;
 
-		return `M${startX},${startY} L${endX},${endY}`;
+		arrowPath = `M${startX},${startY} L${endX},${endY}`;
 	}
 
 	function isHandActive(player: Player, hand: HandType): boolean {
@@ -209,13 +241,7 @@
 		</div>
 
 		<svg class="absolute top-0 left-0 w-full h-full pointer-events-none" style="z-index: 10;">
-			<path
-				d={getArrowPath(gameState.lastMove)}
-				stroke="red"
-				stroke-width="2"
-				fill="none"
-				marker-end="url(#arrowhead)"
-			/>
+			<path d={arrowPath} stroke="red" stroke-width="2" fill="none" marker-end="url(#arrowhead)" />
 			<defs>
 				<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
 					<polygon points="0 0, 10 3.5, 0 7" fill="red" />
