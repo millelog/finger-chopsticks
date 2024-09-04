@@ -4,14 +4,14 @@ This project is an interactive web implementation of the classic hand game "Fing
 
 ## Motivation
 
-I'm so bad at Finger Chopsticks that I built an AI to beat people for me.
+I'm so bad at Finger Chopsticks that I built an AI for my wife to play.
 
 ## Features
 
 - Intuitive drag-and-drop interface
 - Challenging AI opponent (that hopefully beats humans better than I can)
 - Animated moves for better visibility (of your imminent defeat)
-- Responsive design for both desktop and mobile play (lose anywhere, anytime!)
+- Responsive design for both desktop and mobile play
 
 ## Live Demo
 
